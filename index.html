@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WiFi Report</title>
+    
+    <!-- Favicon using your wifi-ques-logo.png -->
+    <link rel="icon" href="wifi-ques-logo.png" type="image/png" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
@@ -94,18 +98,24 @@
       .logo-icon {
         width: 32px;
         height: 32px;
-        background: linear-gradient(135deg, var(--accent), var(--accent2));
         border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 15px;
-        box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
+      }
+
+      .logo-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
       }
 
       .logo-text span {
         color: var(--accent2);
       }
+
       .header-right {
         display: flex;
         align-items: center;
@@ -716,7 +726,6 @@
         box-shadow: var(--shadow-sm);
       }
 
-      /* GREEN ANIMATION WHEN SOLVED */
       .report-row.solved {
         background: linear-gradient(135deg, #f0fdf8, #e6faf4);
         border-color: #10b981;
@@ -725,15 +734,9 @@
       }
 
       @keyframes solvePulse {
-        0% {
-          transform: scale(1);
-        }
-        40% {
-          transform: scale(1.04);
-        }
-        100% {
-          transform: scale(1);
-        }
+        0% { transform: scale(1); }
+        40% { transform: scale(1.04); }
+        100% { transform: scale(1); }
       }
 
       @keyframes fadeUp {
@@ -843,7 +846,9 @@
 
     <header>
       <div class="logo">
-        <div class="logo-icon">📡</div>
+        <div class="logo-icon">
+          <img src="wifi-ques-logo.png" alt="WiFi Report Logo" />
+        </div>
         <div class="logo-text">WIFI <span>REPORT</span></div>
       </div>
       <div class="header-right">
@@ -972,7 +977,7 @@
         <div class="submit-section">
           <div id="formStatus"></div>
           <button id="submitBtn" onclick="submitReport()">
-            <span id="btnText">SUBMIT REPORT</span>
+            <span id="btnText">IPADALA ANG SUMBONG</span>
             <span id="btnIcon">→</span>
           </button>
         </div>
@@ -1022,32 +1027,22 @@
       let latestTimestamp = 0;
 
       window.selectIssue = (btn, val) => {
-        document
-          .querySelectorAll(".issue-btn")
-          .forEach((b) => b.classList.remove("selected"));
+        document.querySelectorAll(".issue-btn").forEach((b) => b.classList.remove("selected"));
         btn.classList.add("selected");
         selectedIssue = val;
       };
 
       window.selectPriority = (btn, val) => {
-        document
-          .querySelectorAll(".priority-btn")
-          .forEach((b) => b.classList.remove("selected"));
+        document.querySelectorAll(".priority-btn").forEach((b) => b.classList.remove("selected"));
         btn.classList.add("selected");
         selectedPriority = val;
       };
 
       window.submitReport = async () => {
-        if (!selectedIssue)
-          return showToast("⚠️ Pili-a kung unsa ang problema", "error");
-        if (!selectedPriority)
-          return showToast(
-            "⚠️ Pili-a kung unsa ka dako ang problema",
-            "error",
-          );
+        if (!selectedIssue) return showToast("⚠️ Pili-a kung unsa ang problema", "error");
+        if (!selectedPriority) return showToast("⚠️ Pili-a kung unsa ka dako ang problema", "error");
 
-        const name =
-          document.getElementById("fieldName").value.trim() || "Dili Mailhan";
+        const name = document.getElementById("fieldName").value.trim() || "Dili Mailhan";
         const room = document.getElementById("fieldRoom").value.trim() || "—";
         const notes = document.getElementById("fieldNotes").value.trim() || "";
 
@@ -1065,7 +1060,10 @@
 
           await addDoc(collection(db, "wifi_reports"), report);
 
-          showToast("✅ Na-submit na! Gipakita dayon sa listahan sa ibabaw.", "success");
+          // 🔥 MANUAL NOTIFICATION for your own submission (this fixes the issue)
+          addNotification(report);
+
+          showToast("✅ Na-submit na! Gipakita dayon sa listahan ug sa abiso.", "success");
           resetForm();
         } catch (err) {
           console.error(err);
@@ -1076,7 +1074,7 @@
       const q = query(
         collection(db, "wifi_reports"),
         orderBy("timestamp", "desc"),
-        limit(20),
+        limit(20)
       );
 
       onSnapshot(q, (snap) => {
@@ -1162,8 +1160,7 @@
 
         const badge = document.getElementById("notifBadge");
         badge.style.display = "flex";
-        badge.textContent =
-          notifications.length > 9 ? "9+" : notifications.length;
+        badge.textContent = notifications.length > 9 ? "9+" : notifications.length;
       }
 
       window.toggleDrawer = () => {
@@ -1208,21 +1205,15 @@
       function resetForm() {
         selectedIssue = null;
         selectedPriority = null;
-        document
-          .querySelectorAll(".issue-btn, .priority-btn")
-          .forEach((b) => b.classList.remove("selected"));
-        ["fieldName", "fieldRoom", "fieldNotes"].forEach(
-          (id) => (document.getElementById(id).value = ""),
-        );
+        document.querySelectorAll(".issue-btn, .priority-btn").forEach((b) => b.classList.remove("selected"));
+        ["fieldName", "fieldRoom", "fieldNotes"].forEach((id) => (document.getElementById(id).value = ""));
       }
 
       function showToast(msg, type = "") {
         const t = document.getElementById("toast");
         t.textContent = msg;
         t.className = "show " + type;
-        setTimeout(() => {
-          t.className = "";
-        }, 3000);
+        setTimeout(() => { t.className = ""; }, 3000);
       }
 
       function timeAgo(date) {
