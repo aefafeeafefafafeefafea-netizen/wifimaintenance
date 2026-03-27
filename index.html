@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WiFi Report</title>
-    
+
     <!-- Favicon using your wifi-ques-logo.png -->
     <link rel="icon" href="wifi-ques-logo.png" type="image/png" />
 
@@ -734,9 +734,15 @@
       }
 
       @keyframes solvePulse {
-        0% { transform: scale(1); }
-        40% { transform: scale(1.04); }
-        100% { transform: scale(1); }
+        0% {
+          transform: scale(1);
+        }
+        40% {
+          transform: scale(1.04);
+        }
+        100% {
+          transform: scale(1);
+        }
       }
 
       @keyframes fadeUp {
@@ -879,9 +885,7 @@
       <div class="page-intro">
         <div class="page-tag">Boarding House Wifi</div>
         <h1>I-report ang <span>Problema sa WiFi</span></h1>
-        <p class="page-sub">
-          Ipahibalo kung unsa ang imong problema sa koneksyon.
-        </p>
+        <p class="page-sub">Ipahibalo kung unsa ang imong problema sa koneksyon.</p>
       </div>
 
       <div class="card">
@@ -1026,23 +1030,68 @@
       let notifications = [];
       let latestTimestamp = 0;
 
+      // ==================== NOTIFICATION SOUND ====================
+      let soundEnabled = false;
+      let audioContext = null;
+
+      function enableSound() {
+        if (soundEnabled) return;
+        soundEnabled = true;
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        showToast(
+          "🔊 Sound sa abiso naka-enable na! (Mag-play kada bag-ong sumbong)",
+          "success"
+        );
+      }
+
+      function playNotificationSound() {
+        if (!soundEnabled || !audioContext) return;
+
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.frequency.setValueAtTime(680, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(
+          0.001,
+          audioContext.currentTime + 0.4
+        );
+
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.4);
+      }
+      // ============================================================
+
       window.selectIssue = (btn, val) => {
-        document.querySelectorAll(".issue-btn").forEach((b) => b.classList.remove("selected"));
+        document
+          .querySelectorAll(".issue-btn")
+          .forEach((b) => b.classList.remove("selected"));
         btn.classList.add("selected");
         selectedIssue = val;
       };
 
       window.selectPriority = (btn, val) => {
-        document.querySelectorAll(".priority-btn").forEach((b) => b.classList.remove("selected"));
+        document
+          .querySelectorAll(".priority-btn")
+          .forEach((b) => b.classList.remove("selected"));
         btn.classList.add("selected");
         selectedPriority = val;
       };
 
       window.submitReport = async () => {
-        if (!selectedIssue) return showToast("⚠️ Pili-a kung unsa ang problema", "error");
-        if (!selectedPriority) return showToast("⚠️ Pili-a kung unsa ka dako ang problema", "error");
+        if (!selectedIssue)
+          return showToast("⚠️ Pili-a kung unsa ang problema", "error");
+        if (!selectedPriority)
+          return showToast(
+            "⚠️ Pili-a kung unsa ka dako ang problema",
+            "error"
+          );
 
-        const name = document.getElementById("fieldName").value.trim() || "Dili Mailhan";
+        const name =
+          document.getElementById("fieldName").value.trim() || "Dili Mailhan";
         const room = document.getElementById("fieldRoom").value.trim() || "—";
         const notes = document.getElementById("fieldNotes").value.trim() || "";
 
@@ -1060,10 +1109,12 @@
 
           await addDoc(collection(db, "wifi_reports"), report);
 
-          // 🔥 MANUAL NOTIFICATION for your own submission (this fixes the issue)
-          addNotification(report);
+          playNotificationSound();
 
-          showToast("✅ Na-submit na! Gipakita dayon sa listahan ug sa abiso.", "success");
+          showToast(
+            "✅ Na-submit na! Gipakita dayon sa listahan ug sa abiso.",
+            "success"
+          );
           resetForm();
         } catch (err) {
           console.error(err);
@@ -1085,6 +1136,7 @@
 
           if (data.timestamp > latestTimestamp && latestTimestamp !== 0) {
             addNotification(data);
+            playNotificationSound();
           }
         });
 
@@ -1099,7 +1151,8 @@
         const el = document.getElementById("recentList");
 
         if (!docs.length) {
-          el.innerHTML = '<div class="no-reports">Walay sumbong pa nga na-submit</div>';
+          el.innerHTML =
+            '<div class="no-reports">Walay sumbong pa nga na-submit</div>';
           return;
         }
 
@@ -1124,11 +1177,11 @@
                   }
                 </div>
                 <div class="report-time">${timeAgo(ts)}</div>
-                
+
                 <div class="status-tick">
-                  <input 
-                    type="checkbox" 
-                    ${isSolved ? "checked" : ""} 
+                  <input
+                    type="checkbox"
+                    ${isSolved ? "checked" : ""}
                     onchange="markStatus('${d.id}', this.checked ? 'solved' : 'unsolved')"
                     style="width:18px;height:18px;accent-color:#10b981;cursor:pointer;"
                   >
@@ -1205,15 +1258,21 @@
       function resetForm() {
         selectedIssue = null;
         selectedPriority = null;
-        document.querySelectorAll(".issue-btn, .priority-btn").forEach((b) => b.classList.remove("selected"));
-        ["fieldName", "fieldRoom", "fieldNotes"].forEach((id) => (document.getElementById(id).value = ""));
+        document
+          .querySelectorAll(".issue-btn, .priority-btn")
+          .forEach((b) => b.classList.remove("selected"));
+        ["fieldName", "fieldRoom", "fieldNotes"].forEach(
+          (id) => (document.getElementById(id).value = "")
+        );
       }
 
       function showToast(msg, type = "") {
         const t = document.getElementById("toast");
         t.textContent = msg;
         t.className = "show " + type;
-        setTimeout(() => { t.className = ""; }, 3000);
+        setTimeout(() => {
+          t.className = "";
+        }, 3000);
       }
 
       function timeAgo(date) {
@@ -1223,6 +1282,10 @@
         if (s < 86400) return Math.floor(s / 3600) + " hrs ago";
         return Math.floor(s / 86400) + " days ago";
       }
+
+      // ==================== ENABLE SOUND ON FIRST CLICK ====================
+      document.addEventListener("click", enableSound, { once: true });
+      // ===================================================================
     </script>
   </body>
 </html>
